@@ -31,6 +31,9 @@ if not SECRET_KEY:
     raise ImproperlyConfigured('Set DJANGO_SECRET_KEY in the environment.')
 
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS')
+render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if render_hostname and render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_hostname)
 if DEBUG:
     ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 elif not ALLOWED_HOSTS:
