@@ -8,7 +8,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.shortcuts import resolve_url
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .fees_importer import import_fees_excel
@@ -1122,7 +1122,11 @@ class FacultyAccountTests(TestCase):
 	def test_health_check_is_available_without_login(self):
 		self.client.logout()
 
-		response = self.client.get('/healthz/')
+		with override_settings(
+			SECURE_SSL_REDIRECT=True,
+			SECURE_REDIRECT_EXEMPT=[r'^healthz/$'],
+		):
+			response = self.client.get('/healthz/')
 
 		self.assertEqual(response.status_code, 200)
 		self.assertEqual(response.content, b'ok')
