@@ -1,0 +1,580 @@
+{% extends 'base.html' %}
+{% load tz %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="dashboard">
+    <div class="page-header">
+      <div>
+        <p class="section-kicker">Overview</p>
+        <h2>Dashboard</h2>
+      </div>
+      <form method="get" class="filter-form">
+        <label for="semester">Offers</label>
+        <select id="semester" name="semester" onchange="this.form.submit()">
+          <option value="all" {% if selected_semester_id == 'all' %}selected{% endif %}>All semesters</option>
+          {% for semester in semesters %}
+            <option value="{{ semester.id }}" {% if selected_semester_id == semester.id|stringformat:'s' %}selected{% endif %}>{{ semester.name }}{% if semester.is_active %} (Active){% endif %}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <div class="summary-grid">
+      <div class="card card--primary">
+        <h3>Active Semester</h3>
+        <p>{% if active_semester %}{{ active_semester.name }}{% else %}None{% endif %}</p>
+      </div>
+      <div class="card">
+        <h3>{% if selected_semester %}{{ selected_semester.name }} Offers{% else %}Total Offers{% endif %}</h3>
+        <p>{{ total_offers }}</p>
+      </div>
+      <div class="card">
+        <h3>Paid</h3>
+        <p>{{ paid_offers }}</p>
+      </div>
+      <div class="card">
+        <h3>Unpaid</h3>
+        <p>{{ unpaid_offers }}</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <h3>Offer List</h3>
+          <p class="result-summary"><span id="offer-filter-count">{{ total_offers }}</span> offer{{ total_offers|pluralize }}</p>
+        </div>
+        <div class="offer-filter-actions">
+          <button type="button" class="primary-action" id="offer-export-excel">Export filtered table (Excel .xlsx)</button>
+          <button type="button" class="secondary-action" id="offer-clear-filters">Clear filters</button>
+        </div>
+      </div>
+
+      <p id="offer-alert" class="alert" role="status" hidden></p>
+
+      <div class="table-scroll master-data-table-scroll" id="offer-list">
+        {% csrf_token %}
+        <table class="master-data-table offer-list-table">
+          <thead>
+            <tr>
+              <th>Sr. No.</th>
+              <th>Application No</th>
+              <th>Roll No</th>
+              <th>Fees Status</th>
+
+              <th>Fee Amount</th>
+              <th>Fee Deadline</th>
+              <th>Remarks</th>
+              <th>Programme</th>
+              <th>Discipline</th>
+              <th>Research Area</th>
+              <th>Full Name</th>
+              <th>First Name</th>
+              <th>Middle Name</th>
+              <th>Last Name</th>
+              <th>Category</th>
+              <th>Date of Birth</th>
+              <th>Gender</th>
+              <th>Admission Offered Category</th>
+              <th>Date of Joining</th>
+              <th>Contact No 1</th>
+              <th>Contact No 2</th>
+              <th>IITGN Email ID</th>
+              <th>Email</th>
+              <th>Permanent Address Line 1</th>
+              <th>Address Line 2</th>
+              <th>City</th>
+              <th>Pincode</th>
+              <th>State</th>
+              <th>Withdrawal Status</th>
+              <th>Actions</th>
+            </tr>
+            <tr id="offer-column-filters" class="offer-column-filters"></tr>
+          </thead>
+          <tbody>
+            {% for offer in offers %}
+              <tr class="{% if offer.withdrawal_status == 'withdrawn' %}is-withdrawn{% endif %}">
+                <td>{{ forloop.counter }}</td>
+                <td>{{ offer.student.application_no }}</td>
+                <td class="offer-edit-cell">
+                  <div class="inline-edit">
+                    <input type="text" class="inline-input" maxlength="255"
+                           value="{{ offer.roll_no }}" data-original="{{ offer.roll_no }}"
+                           data-field="roll_no" data-url="{% url 'offer-update-roll-no' offer.id %}"
+                           aria-label="Roll No for {{ offer.student.application_no }}" />
+                    <button type="button" class="primary-action primary-action--small inline-save">Save</button>
+                  </div>
+                  <span class="inline-status"></span>
+                </td>
+                <td>{% if offer.fees_paid %}<span class="fee-pill fee-pill--paid">Paid</span>{% else %}<span class="fee-pill fee-pill--unpaid">Unpaid</span>{% endif %}</td>
+
+                <td>{% if offer.first_fees_amount is not None %}&#8377;{{ offer.first_fees_amount|floatformat:'-2g' }}{% if offer.first_fees_paid_on %}<br><small>{{ offer.first_fees_paid_on|timezone:'Asia/Kolkata'|date:'j M Y, H:i' }}</small>{% endif %}{% else %}&mdash;{% endif %}</td>
+
+                <td class="offer-edit-cell">
+                  <div class="inline-edit">
+                    <input type="date" class="inline-input inline-input--date"
+                          value="{{ offer.fees_deadline|date:'Y-m-d' }}" data-original="{{ offer.fees_deadline|date:'Y-m-d' }}"
+                          data-field="fees_deadline" data-url="{% url 'offer-update-fees-deadline' offer.id %}"
+                          aria-label="Fee deadline for {{ offer.student.application_no }}" />
+                    <button type="button" class="primary-action primary-action--small inline-save">Save</button>
+                  </div>
+                  <span class="inline-status"></span>
+                </td>
+
+                <td class="offer-edit-cell">
+                  <div class="inline-edit">
+                    <textarea class="inline-input inline-input--textarea" rows="1"
+                              data-original="{{ offer.remarks }}" data-field="remarks"
+                              data-url="{% url 'offer-update-remarks' offer.id %}"
+                              aria-label="Remarks for {{ offer.student.application_no }}">{{ offer.remarks }}</textarea>
+                    <button type="button" class="primary-action primary-action--small inline-save">Save</button>
+                  </div>
+                  <span class="inline-status"></span>
+                </td>
+                <td>{{ offer.student.program|default:'-' }}</td>
+                <td>{{ offer.student.discipline|default:'-' }}</td>
+                <td>{{ offer.student.research_area|default:'-' }}</td>
+                <td>{{ offer.student.full_name }}</td>
+                <td>{{ offer.student.first_name|default:'-' }}</td>
+                <td>{{ offer.student.middle_name|default:'-' }}</td>
+                <td>{{ offer.student.last_name|default:'-' }}</td>
+                <td>{{ offer.student.category|default:'-' }}</td>
+                <td>{{ offer.student.dob|date:'d M Y'|default:'-' }}</td>
+                <td>{{ offer.student.gender|default:'-' }}</td>
+
+                <td class="offer-edit-cell">
+                  <div class="inline-edit">
+                    <input type="text" class="inline-input inline-input--category" maxlength="255"
+                           value="{{ offer.admission_offered_category }}" data-original="{{ offer.admission_offered_category }}"
+                           data-field="admission_offered_category" data-url="{% url 'offer-update-admission-category' offer.id %}"
+                           aria-label="Admission offered category for {{ offer.student.application_no }}" />
+                    <button type="button" class="primary-action primary-action--small inline-save">Save</button>
+                  </div>
+                  <span class="inline-status"></span>
+                </td>
+
+                <td class="offer-edit-cell">
+                  <div class="inline-edit">
+                    <input type="date" class="inline-input inline-input--date"
+                          value="{{ offer.date_of_joining|date:'Y-m-d' }}" data-original="{{ offer.date_of_joining|date:'Y-m-d' }}"
+                          data-field="date_of_joining" data-url="{% url 'offer-update-date-of-joining' offer.id %}"
+                          aria-label="Date of joining for {{ offer.student.application_no }}" />
+                    <button type="button" class="primary-action primary-action--small inline-save">Save</button>
+                  </div>
+                  <span class="inline-status"></span>
+                </td>
+
+
+                <td>{{ offer.student.contact_no_1|default:'-' }}</td>
+                <td>{{ offer.student.contact_no_2|default:'-' }}</td>
+
+                <td class="offer-edit-cell">
+                  <div class="inline-edit">
+                    <input type="email" class="inline-input inline-input--email" maxlength="254"
+                           value="{{ offer.student.iitgn_email_id }}" data-original="{{ offer.student.iitgn_email_id }}"
+                           data-field="iitgn_email_id" data-url="{% url 'offer-update-iitgn-email' offer.id %}"
+                           aria-label="IITGN email for {{ offer.student.application_no }}" />
+                    <button type="button" class="primary-action primary-action--small inline-save">Save</button>
+                  </div>
+                  <span class="inline-status"></span>
+                </td>
+
+                <td>{{ offer.student.email|default:'-' }}</td>
+                <td>{{ offer.student.permanent_address_line_1|default:'-' }}</td>
+                <td>{{ offer.student.address_line_2|default:'-' }}</td>
+                <td>{{ offer.student.city|default:'-' }}</td>
+                <td>{{ offer.student.pincode|default:'-' }}</td>
+                <td>{{ offer.student.state|default:'-' }}</td>
+                <td class="offer-edit-cell">
+                  <label class="withdraw-label">
+                    <input type="checkbox" class="withdraw-toggle"
+                           data-url="{% url 'offer-update-withdrawal' offer.id %}"
+                           {% if offer.withdrawal_status == 'withdrawn' %}checked{% endif %} />
+                    Withdrawn
+                  </label>
+                  <span class="inline-status"></span>
+                </td>
+                <td class="offer-actions-cell">
+                  <form method="post" action="{% url 'offer-remove' offer.id %}"
+                        onsubmit="return confirm('Remove the offer for {{ offer.student.full_name|escapejs }} ({{ offer.student.application_no|escapejs }})? The applicant stays in All applicants.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                    <button type="submit" class="secondary-action secondary-action--small secondary-action--danger">Remove offer</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="31" class="empty-state">No offers available.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+
+<style>
+  .offer-filter-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .master-data-table-scroll { max-width: 100%; overflow-x: auto; overflow-y: visible; }
+  .offer-list-table { min-width: 2200px; width: max-content; }
+  .offer-list-table th, .offer-list-table td { vertical-align: top; }
+  .offer-list-table td { overflow-wrap: anywhere; }
+  .offer-column-filters th { padding: .35rem; vertical-align: top; background: var(--panel, #f5f7fb); }
+  .offer-column-filters .filter-hint { display: block; font-size: .7rem; font-weight: 600; margin-bottom: .35rem; }
+  .offer-filter-dropdown { position: relative; min-width: 125px; width: 100%; }
+  .offer-filter-toggle { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 42px; padding: .5rem .6rem; border: 1px solid #d8e0ec; border-radius: 7px; background: #fff; color: #172033; font-size: .82rem; text-align: left; cursor: pointer; }
+  .offer-filter-toggle .offer-filter-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .offer-filter-menu { display: none; position: fixed; z-index: 10000; box-sizing: border-box; width: max-content; min-width: 180px; max-width: min(360px, calc(100vw - 24px)); max-height: min(320px, 55vh); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; padding: .35rem 0; border: 1px solid #d8e0ec; border-radius: 6px; background: #fff; box-shadow: 0 8px 20px rgba(20,35,60,.15); }
+  .offer-filter-dropdown.is-open .offer-filter-menu { display: block; }
+  .offer-filter-option { display: flex; align-items: flex-start; gap: .5rem; padding: .42rem .6rem; color: #172033; font-size: .86rem; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+  .offer-filter-option span { min-width: 0; flex: 1 1 auto; }
+  .offer-filter-option:hover { background: #f0f5fc; }
+  .offer-filter-option input { margin: .15rem 0 0; flex: 0 0 auto; }
+  .offer-column-search { box-sizing: border-box; width: 100%; min-width: 115px; min-height: 42px; padding: .5rem .6rem; border: 1px solid #d8e0ec; border-radius: 7px; background: #fff; color: #172033; font-size: .84rem; }
+  .offer-filter-empty { padding: .5rem .6rem; color: #667085; font-size: .82rem; }
+  .offer-filter-menu-actions { display: flex; justify-content: space-between; gap: .5rem; padding: .35rem .6rem; border-bottom: 1px solid #edf0f5; margin-bottom: .2rem; position: sticky; top: 0; background: #fff; z-index: 1; }
+  .offer-filter-menu-actions button { padding: .2rem .35rem; border: 0; background: transparent; color: #2456b8; font-size: .78rem; cursor: pointer; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+(() => {
+  function initOfferFilters() {
+    const table = document.querySelector('.offer-list-table');
+    if (!table || table.dataset.filtersInitialized === 'true') return;
+
+    const headerRow = table.tHead && table.tHead.rows[0];
+    const filterRow = document.getElementById('offer-column-filters');
+    const body = table.tBodies[0];
+    if (!headerRow || !filterRow || !body) return;
+    table.dataset.filtersInitialized = 'true';
+
+    const headers = Array.from(headerRow.cells);
+    const dataRows = Array.from(body.rows).filter(row => !row.querySelector('.empty-state'));
+    dataRows.forEach((row, index) => { row.dataset.originalOrder = String(index); });
+    const filters = [];
+    // Only these columns get filter dropdowns; all other columns stay blank.
+    const filterableHeaders = new Set([
+      'application no', 'roll no', 'fees status', 'programme', 'discipline',
+      'research area', 'category', 'admission offered category', 'withdrawal status'
+    ]);
+
+    function cellText(cell) {
+      if (!cell) return '';
+      const control = cell.querySelector('input:not([type="checkbox"]), textarea, select');
+      if (control) return (control.value || '').trim();
+      const checkbox = cell.querySelector('input[type="checkbox"]');
+      if (checkbox) return checkbox.checked ? 'Withdrawn' : 'Not withdrawn';
+      return (cell.innerText || cell.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+
+    headers.forEach((header, index) => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+
+      // Keep an empty cell so filter controls stay aligned with table columns.
+      const heading = header.textContent.trim().toLowerCase().replace(/\s+/g, ' ');
+      if (heading === 'application no' || heading === 'roll no') {
+        const label = document.createElement('label');
+        label.className = 'filter-hint';
+        label.textContent = 'Search';
+        const search = document.createElement('input');
+        search.type = 'search';
+        search.className = 'offer-column-search';
+        search.placeholder = heading === 'application no' ? 'Search application no' : 'Search roll no';
+        search.setAttribute('aria-label', 'Search ' + header.textContent.trim());
+        search.addEventListener('input', applyFilters);
+        th.append(label, search);
+        filters.push({ index, type: 'search', input: search });
+        filterRow.appendChild(th);
+        return;
+      }
+      if (!filterableHeaders.has(heading)) {
+        th.setAttribute('aria-label', 'No filter for ' + header.textContent.trim());
+        filterRow.appendChild(th);
+        return;
+      }
+
+      const label = document.createElement('label');
+      label.className = 'filter-hint';
+      label.textContent = 'Filter';
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'offer-filter-dropdown';
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'offer-filter-toggle';
+      toggle.setAttribute('aria-label', 'Filter ' + header.textContent.trim());
+      toggle.setAttribute('aria-expanded', 'false');
+      const summary = document.createElement('span');
+      summary.className = 'offer-filter-summary';
+      summary.textContent = '0 selected';
+      const arrow = document.createElement('span');
+      arrow.textContent = '▾';
+      toggle.append(summary, arrow);
+
+      const menu = document.createElement('div');
+      menu.className = 'offer-filter-menu';
+      menu.setAttribute('role', 'group');
+      menu.setAttribute('aria-label', header.textContent.trim() + ' options');
+      const menuActions = document.createElement('div');
+      menuActions.className = 'offer-filter-menu-actions';
+      const selectAllButton = document.createElement('button');
+      selectAllButton.type = 'button';
+      selectAllButton.textContent = 'Select all';
+      const clearButton = document.createElement('button');
+      clearButton.type = 'button';
+      clearButton.textContent = 'Clear';
+      menuActions.append(selectAllButton, clearButton);
+      menu.appendChild(menuActions);
+
+      // Build filter choices from the table cells.
+      // The withdrawal and fees-status columns always show both possible states,
+      // even if one state is not currently present in the visible rows.
+      let values = [...new Set(
+        dataRows
+          .map(row => cellText(row.cells[index]))
+          .filter(value => value !== '')
+      )];
+
+      if (heading === 'withdrawal status') {
+        values = ['Not withdrawn', 'Withdrawn'];
+      } else if (heading === 'fees status') {
+        // Always offer both states, even when every visible row has the same one.
+        values = ['Paid', 'Unpaid'];
+      } else {
+        values.sort((a, b) =>
+          a.localeCompare(b, undefined, {
+            numeric: true,
+            sensitivity: 'base'
+          })
+        );
+      }
+
+      const checkboxes = [];
+      values.forEach(value => {
+        const optionLabel = document.createElement('label');
+        optionLabel.className = 'offer-filter-option';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = value;
+        checkbox.addEventListener('change', () => {
+          updateSummary();
+          applyFilters();
+        });
+        const optionText = document.createElement('span');
+        optionText.textContent = value;
+        optionLabel.append(checkbox, optionText);
+        menu.appendChild(optionLabel);
+        checkboxes.push(checkbox);
+      });
+      if (!values.length) {
+        const empty = document.createElement('div');
+        empty.className = 'offer-filter-empty';
+        empty.textContent = 'No options';
+        menu.appendChild(empty);
+      }
+
+      function updateSummary() {
+        const selected = checkboxes.filter(checkbox => checkbox.checked);
+        summary.textContent = selected.length === 0 ? '0 selected' :
+          selected.length === 1 ? selected[0].value : selected.length + ' selected';
+      }
+      selectAllButton.addEventListener('click', () => {
+        checkboxes.forEach(checkbox => { checkbox.checked = true; });
+        updateSummary();
+        applyFilters();
+      });
+      clearButton.addEventListener('click', () => {
+        checkboxes.forEach(checkbox => { checkbox.checked = false; });
+        updateSummary();
+        applyFilters();
+      });
+      dropdown.append(toggle);
+      document.body.appendChild(menu);
+      function positionMenu() {
+        const rect = toggle.getBoundingClientRect();
+        const viewportPadding = 8;
+        const maxMenuWidth = Math.min(360, window.innerWidth - 24);
+        const left = Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - maxMenuWidth - viewportPadding));
+        menu.style.left = left + 'px';
+        menu.style.minWidth = Math.min(rect.width, window.innerWidth - 24) + 'px';
+        menu.style.maxWidth = maxMenuWidth + 'px';
+
+        // Keep the menu inside the viewport. Open upward when there is not
+        // enough room below the filter control.
+        const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+        const spaceAbove = rect.top - viewportPadding;
+        const openUpward = spaceBelow < 180 && spaceAbove > spaceBelow;
+        const availableHeight = Math.max(100, Math.min(320, (openUpward ? spaceAbove : spaceBelow) - 6));
+        menu.style.maxHeight = availableHeight + 'px';
+        // Measure after max-height is applied, then anchor the menu edge to the toggle.
+        const menuHeight = Math.min(menu.scrollHeight, availableHeight);
+        menu.style.top = openUpward
+          ? Math.max(viewportPadding, rect.top - menuHeight - 3) + 'px'
+          : Math.min(window.innerHeight - menuHeight - viewportPadding, rect.bottom + 3) + 'px';
+      }
+      toggle.addEventListener('click', () => {
+        const open = dropdown.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', String(open));
+        menu.style.display = open ? 'block' : 'none';
+        if (open) positionMenu();
+      });
+      // Store menu so it can be closed and cleared even though it is outside the scrollable table.
+      th.append(label, dropdown);
+      filters.push({ index, type: 'filter', checkboxes, updateSummary, dropdown, toggle, menu, positionMenu });
+      filterRow.appendChild(th);
+    });
+
+    // Keep the user's filter/search choices across page refreshes.
+    // Scope the saved state to this dashboard URL and selected semester.
+    const semesterSelect = document.getElementById('semester');
+    const filterStorageKey = 'offer-list-filters:' + window.location.pathname + ':' + (semesterSelect ? semesterSelect.value : 'all');
+
+    function saveFilterState() {
+      try {
+        const state = {};
+        filters.forEach(filter => {
+          if (filter.type === 'search') {
+            state[String(filter.index)] = { type: 'search', value: filter.input.value };
+          } else {
+            state[String(filter.index)] = {
+              type: 'filter',
+              values: filter.checkboxes.filter(checkbox => checkbox.checked).map(checkbox => checkbox.value)
+            };
+          }
+        });
+        window.localStorage.setItem(filterStorageKey, JSON.stringify(state));
+      } catch (error) {
+        // Filtering should still work if browser storage is unavailable.
+      }
+    }
+
+    function restoreFilterState() {
+      try {
+        const saved = window.localStorage.getItem(filterStorageKey);
+        if (!saved) return;
+        const state = JSON.parse(saved);
+        filters.forEach(filter => {
+          const item = state[String(filter.index)];
+          if (!item) return;
+          if (filter.type === 'search' && item.type === 'search') {
+            filter.input.value = item.value || '';
+          } else if (filter.type === 'filter' && item.type === 'filter' && Array.isArray(item.values)) {
+            const selectedValues = new Set(item.values);
+            filter.checkboxes.forEach(checkbox => { checkbox.checked = selectedValues.has(checkbox.value); });
+            filter.updateSummary();
+          }
+        });
+      } catch (error) {
+        // Ignore invalid or inaccessible saved state and use default filters.
+      }
+    }
+
+    function applyFilters() {
+      const selectedFilters = filters
+        .filter(filter => filter.type === 'filter' && filter.checkboxes.some(checkbox => checkbox.checked))
+        .map(filter => ({
+          index: filter.index,
+          values: new Set(filter.checkboxes.filter(checkbox => checkbox.checked).map(checkbox => checkbox.value))
+        }));
+      const searches = filters
+        .filter(filter => filter.type === 'search' && filter.input.value.trim() !== '')
+        .map(filter => ({ index: filter.index, query: filter.input.value.trim().toLocaleLowerCase() }));
+
+      dataRows.forEach(row => {
+        const matchesDropdowns = selectedFilters.every(filter => filter.values.has(cellText(row.cells[filter.index])));
+        const matchesSearches = searches.every(search => cellText(row.cells[search.index]).toLocaleLowerCase().includes(search.query));
+        row.hidden = !(matchesDropdowns && matchesSearches);
+      });
+
+      const orderedRows = [...dataRows].sort((a, b) =>
+        Number(a.dataset.originalOrder) - Number(b.dataset.originalOrder)
+      );
+      orderedRows.forEach(row => body.appendChild(row));
+
+      const count = document.getElementById('offer-filter-count');
+      const visibleCount = dataRows.filter(row => !row.hidden).length;
+      if (count) count.textContent = String(visibleCount);
+      saveFilterState();
+    }
+
+    // Restore selections before applying the initial row visibility.
+    restoreFilterState();
+    applyFilters();
+
+    const clearButton = document.getElementById('offer-clear-filters');
+    if (clearButton) clearButton.addEventListener('click', () => {
+      filters.forEach(filter => {
+        if (filter.type === 'search') {
+          filter.input.value = '';
+        } else {
+          filter.checkboxes.forEach(checkbox => { checkbox.checked = false; });
+          filter.updateSummary();
+          filter.dropdown.classList.remove('is-open');
+          filter.toggle.setAttribute('aria-expanded', 'false');
+          filter.menu.style.display = 'none';
+        }
+      });
+      applyFilters();
+    });
+
+    document.addEventListener('click', event => {
+      filters.forEach(filter => {
+        if (filter.type === 'filter' && !filter.dropdown.contains(event.target) && !filter.menu.contains(event.target)) {
+          filter.dropdown.classList.remove('is-open');
+          filter.toggle.setAttribute('aria-expanded', 'false');
+          filter.menu.style.display = 'none';
+        }
+      });
+    });
+
+    function repositionOpenMenus() {
+      filters
+        .filter(filter => filter.type === 'filter' && filter.dropdown.classList.contains('is-open'))
+        .forEach(filter => filter.positionMenu());
+    }
+
+    // Menus are rendered at document level to avoid being clipped by the
+    // horizontally scrolling table. Reposition them whenever any ancestor or
+    // the page scrolls so each menu stays attached to its own filter button.
+    window.addEventListener('resize', repositionOpenMenus);
+    window.addEventListener('scroll', repositionOpenMenus, true);
+    const tableScroller = document.querySelector('.master-data-table-scroll');
+    if (tableScroller) tableScroller.addEventListener('scroll', repositionOpenMenus);
+
+    const exportButton = document.getElementById('offer-export-excel');
+    if (exportButton) exportButton.addEventListener('click', () => {
+      const visibleRows = dataRows.filter(row => !row.hidden);
+      // The Actions column (Remove offer button) is not data, so it is left out of the export.
+      const exportIndexes = headers.map((_, index) => index)
+        .filter(index => headers[index].textContent.trim().toLowerCase() !== 'actions');
+      const rows = [exportIndexes.map(index => headers[index].textContent.trim())];
+      visibleRows.forEach(row => rows.push(exportIndexes.map(index => cellText(row.cells[index]))));
+
+      if (typeof XLSX === 'undefined') {
+        alert('Excel export library could not be loaded. Please check your internet connection and try again.');
+        return;
+      }
+
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Offer List');
+      XLSX.writeFile(workbook, 'offer-status-filtered.xlsx');
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initOfferFilters);
+  } else {
+    initOfferFilters();
+  }
+})();
+</script>
+
+{% endblock %}

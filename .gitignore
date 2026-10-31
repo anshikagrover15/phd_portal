@@ -1,0 +1,28 @@
+# pyenv
+.python-version
+.vscode
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Django
+db.sqlite3
+staticfiles/
+*.log
+
+# macOS
+.DS_Store
+# Real applicant data - never commit
+mtech_portal/sample_data/
+sample_data/
+mtech_portal/media/
+media/

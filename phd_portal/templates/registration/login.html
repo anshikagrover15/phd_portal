@@ -1,0 +1,29 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in &middot; IITGN PhD Admissions</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <div class="login-wrap">
+      <div class="login-card">
+        <p class="section-kicker">IITGN Admissions Office</p>
+        <h2>PhD Admissions Portal</h2>
+
+        {% if form.errors %}<p class="login-error">Invalid user ID or password.</p>{% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next }}" />
+          <label for="id_username">User ID</label>
+          <input type="text" name="username" id="id_username" autofocus required autocomplete="username" />
+          <label for="id_password">Password</label>
+          <input type="password" name="password" id="id_password" required autocomplete="current-password" />
+          <button type="submit" class="btn btn--primary">Sign in</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

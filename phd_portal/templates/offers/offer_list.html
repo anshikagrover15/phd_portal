@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-header panel-header--stacked">
+      <div>
+        <p class="section-kicker">Admissions</p>
+        <h2>Offers</h2>
+      </div>
+      <form method="get" class="filter-form">
+        <label for="semester">Semester</label>
+        <select id="semester" name="semester" onchange="this.form.submit()">
+          <option value="">All semesters</option>
+          {% for semester in semesters %}
+            <option value="{{ semester.id }}" {% if selected_semester_id == semester.id|stringformat:'s' %}selected{% endif %}>{{ semester.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Application No</th>
+          <th>Student</th>
+          <th>Semester</th>
+          <th>Offer No</th>
+          <th>Fees Paid</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for offer in offers %}
+          <tr>
+            <td>{{ offer.student.application_no }}</td>
+            <td>{{ offer.student.full_name }}</td>
+            <td>{{ offer.semester.name }}</td>
+            <td>{{ offer.dis_sr_no }}</td>
+            <td>{{ offer.fees_paid|yesno:'Yes,No' }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">No offers found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

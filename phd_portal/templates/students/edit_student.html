@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <p class="section-kicker">Admissions</p>
+      <h2>Edit student {{ student.application_no }}</h2>
+    </div>
+  </div>
+
+  <form method="post" class="semester-form">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-row">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+          <div class="field-error">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <div class="form-actions">
+      <button type="submit" class="primary-action">Save Changes</button>
+      <a href="{% url 'student-list' %}" class="secondary-action">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

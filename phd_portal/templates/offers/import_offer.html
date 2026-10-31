@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <p class="section-kicker">Import</p>
+        <h2>Import offers</h2>
+      </div>
+      <a href="{% url 'home' %}" class="secondary-action">View dashboard</a>
+    </div>
+
+    {% include "includes/import_tabs.html" %}
+    <p class="import-hint">Upload the offer list for a semester. Students found in the applicant data are added to the offers list; students not found are reported as errors.</p>
+
+    {% if error %}
+      <div class="alert alert--error">{{ error }}</div>
+    {% endif %}
+
+    {% if summary %}
+      <div class="alert alert--success">Offers import complete.</div>
+      <div class="result-grid">
+        <div class="stat stat--ok"><strong>{{ summary.created }}</strong><span>created</span></div>
+        <div class="stat"><strong>{{ summary.updated }}</strong><span>updated</span></div>
+        <div class="stat"><strong>{{ summary.skipped }}</strong><span>skipped</span></div>
+        <div class="stat {% if summary.errors %}stat--warn{% endif %}"><strong>{{ summary.errors|length }}</strong><span>error{{ summary.errors|length|pluralize }}</span></div>
+      </div>
+
+      {% if summary.errors %}
+        <h3>Rows with errors</h3>
+        <ul class="error-list">
+          {% for error in summary.errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <label for="semester">Semester</label>
+        <select name="semester" id="semester" required>
+          <option value="">Choose a semester</option>
+          {% for semester in semesters %}
+            <option value="{{ semester.id }}" {% if selected_semester_id == semester.id|stringformat:"s" %}selected{% endif %}>{{ semester.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="excel_file">Offers Excel file</label>
+        <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls" required />
+      </div>
+      <button type="submit">Import offers</button>
+    </form>
+  </section>
+{% endblock %}

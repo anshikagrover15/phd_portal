@@ -1,0 +1,5 @@
+<nav class="tabs" aria-label="Import type">
+  <a href="{% url 'student-import' %}" class="tab {% if request.resolver_match.url_name == 'student-import' %}active{% endif %}">Applicants</a>
+  <a href="{% url 'fees-import' %}" class="tab {% if request.resolver_match.url_name == 'fees-import' %}active{% endif %}">Fees</a>
+  <a href="{% url 'offer-import' %}" class="tab {% if request.resolver_match.url_name == 'offer-import' %}active{% endif %}">Offers</a>
+</nav>

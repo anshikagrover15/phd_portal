@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <p class="section-kicker">Import</p>
+        <h2>Import fees</h2>
+      </div>
+      <a href="{% url 'home' %}" class="secondary-action">View dashboard</a>
+    </div>
+
+    {% include "includes/import_tabs.html" %}
+    <p class="import-hint">Upload the fee payment report. Successful payments mark the matching offer as paid.</p>
+
+    {% if error %}
+      <div class="alert alert--error">{{ error }}</div>
+    {% endif %}
+
+    {% if summary %}
+      <div class="alert alert--success">Fees import complete.</div>
+      <div class="result-grid">
+        <div class="stat stat--ok"><strong>{{ summary.updated }}</strong><span>offer{{ summary.updated|pluralize }} marked paid</span></div>
+        <div class="stat {% if summary.by_name %}stat--warn{% endif %}"><strong>{{ summary.by_name }}</strong><span>matched by name only (check)</span></div>
+        <div class="stat"><strong>{{ summary.not_successful }}</strong><span>non-successful payment{{ summary.not_successful|pluralize }} ignored</span></div>
+        <div class="stat {% if summary.unmatched %}stat--warn{% endif %}"><strong>{{ summary.unmatched|length }}</strong><span>not matched</span></div>
+        <div class="stat {% if summary.invalid_rows %}stat--warn{% endif %}"><strong>{{ summary.invalid_rows }}</strong><span>invalid row{{ summary.invalid_rows|pluralize }}</span></div>
+      </div>
+
+      {% if summary.unmatched %}
+        <h3>Rows not matched to the offered list</h3>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Excel row</th><th>Application No</th><th>Name</th><th>Amount</th><th>Reason</th></tr>
+            </thead>
+            <tbody>
+              {% for row in summary.unmatched %}
+                <tr>
+                  <td>{{ row.row }}</td>
+                  <td>{{ row.application_no|default:'-' }}</td>
+                  <td>{{ row.name|default:'-' }}</td>
+                  <td>{{ row.amount }}</td>
+                  <td>{{ row.reason }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <label for="semester">Match against offers in</label>
+        <select id="semester" name="semester">
+          <option value="">All semesters</option>
+          {% for semester in semesters %}
+            <option value="{{ semester.id }}" {% if selected_semester_id == semester.id|stringformat:'s' %}selected{% endif %}>{{ semester.name }}{% if semester.is_active %} (Active){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="excel_file">Fees Excel file</label>
+        <input id="excel_file" type="file" name="excel_file" accept=".xlsx,.xls" required />
+      </div>
+      <button type="submit">Upload</button>
+    </form>
+  </section>
+{% endblock %}

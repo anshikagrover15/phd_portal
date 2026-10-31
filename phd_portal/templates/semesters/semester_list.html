@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <p class="section-kicker">Setup</p>
+        <h2>Semesters</h2>
+        <p class="result-summary">Offers and applicants are scoped to a semester. Only one semester is active at a time.</p>
+      </div>
+      <a href="{% url 'semester-add' %}" class="primary-action">Add semester</a>
+    </div>
+
+    <div class="table-scroll">
+      <table class="data-table semester-table">
+        <thead>
+          <tr>
+            <th>Semester</th>
+            <th>Status</th>
+            <th class="col-action">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for semester in semesters %}
+            <tr class="{% if semester.is_active %}is-active-row{% endif %}">
+              <td class="semester-name">{{ semester.name }}</td>
+              <td>
+                {% if semester.is_active %}<span class="badge badge--ok">Active</span>{% else %}<span class="badge">Inactive</span>{% endif %}
+              </td>
+              <td class="col-action">
+                <form method="post" action="{% url 'semester-toggle-active' semester.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="secondary-action secondary-action--small">
+                    {% if semester.is_active %}Mark inactive{% else %}Make active{% endif %}
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" class="empty-state">No semesters yet. Add one to get started.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

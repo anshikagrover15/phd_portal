@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel master-data-panel">
+    <div class="panel-header master-data-header">
+      <div>
+        <p class="section-kicker">Admissions</p>
+        <h2>All applicants</h2>
+        <p class="result-summary">{{ result_count }} applicant{{ result_count|pluralize }} found</p>
+      </div>
+      <a href="{% url 'student-import' %}" class="primary-action">Import applicants</a>
+    </div>
+
+    <form method="get" class="master-data-filters" aria-label="Applicant filters">
+      <div class="filter-group filter-group--search">
+        <label for="q">Search</label>
+        <input type="search" id="q" name="q" value="{{ q }}" placeholder="Name, application no, email, address…" />
+      </div>
+      <div class="filter-group">
+        <label for="semester">Semester</label>
+        <select id="semester" name="semester">
+          <option value="all" {% if selected_semester_id == 'all' %}selected{% endif %}>All semesters</option>
+          {% for semester in semesters %}
+            <option value="{{ semester.id }}" {% if selected_semester_id == semester.id|stringformat:'s' %}selected{% endif %}>{{ semester.name }}{% if semester.is_active %} (Active){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Program</label>
+        <details class="multi-select" data-simple data-all-label="All programs">
+          <summary><span class="multi-select-summary">All programs</span></summary>
+          <div class="multi-select-menu">
+            <div class="multi-select-actions"><button type="button" data-action="none">Clear</button></div>
+            {% for item in programs %}
+              <label class="multi-select-option">
+                <input type="checkbox" name="program" value="{{ item }}" {% if item in program_filter %}checked{% endif %}>
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+      <div class="filter-group">
+        <label>Discipline</label>
+        <details class="multi-select" data-simple data-all-label="All disciplines">
+          <summary><span class="multi-select-summary">All disciplines</span></summary>
+          <div class="multi-select-menu">
+            <div class="multi-select-actions"><button type="button" data-action="none">Clear</button></div>
+            {% for item in disciplines %}
+              <label class="multi-select-option">
+                <input type="checkbox" name="discipline" value="{{ item }}" {% if item in discipline_filter %}checked{% endif %}>
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+      <div class="filter-group">
+        <label>Category</label>
+        <details class="multi-select" data-simple data-all-label="All categories">
+          <summary><span class="multi-select-summary">All categories</span></summary>
+          <div class="multi-select-menu">
+            <div class="multi-select-actions"><button type="button" data-action="none">Clear</button></div>
+            {% for item in categories %}
+              <label class="multi-select-option">
+                <input type="checkbox" name="category" value="{{ item }}" {% if item in category_filter %}checked{% endif %}>
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+      <div class="filter-group">
+        <label for="offer">Offer status</label>
+        <select id="offer" name="offer">
+          <option value="">All records</option>
+          <option value="not_offered" {% if offer_filter == 'not_offered' %}selected{% endif %}>Not offered</option>
+          <option value="offered" {% if offer_filter == 'offered' %}selected{% endif %}>Offered</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="primary-action">Apply filters</button>
+        {% if q or offer_filter or program_filter or discipline_filter or category_filter or selected_semester_id != 'all' %}
+          <a href="{% url 'student-list' %}" class="secondary-action">Clear all</a>
+        {% endif %}
+      </div>
+    </form>
+
+    <div class="table-scroll master-data-table-scroll">
+      <table class="master-data-table">
+        <thead>
+          <tr>
+            <th>Sr. No.</th>
+            <th>Application No</th>
+            <th>First Name</th>
+            <th>Middle Name</th>
+            <th>Last Name</th>
+            <th>Full Name</th>
+            <th>Semester</th>
+            <th>Program</th>
+            <th>Discipline</th>
+            <th>Research Area</th>
+            <th>Category</th>
+            <th>Date of Birth</th>
+            <th>Gender</th>
+            <th>Contact No 1</th>
+            <th>Contact No 2</th>
+            <th>Email</th>
+            <th>Permanent Address 1</th>
+            <th>Permanent Address 2</th>
+            <th>City</th>
+            <th>PIN Code</th>
+            <th>State</th>
+            <th>IITGN Email ID</th>
+            <th>Offer</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ student.application_no }}</td>
+              <td title="{{ student.first_name }}">{{ student.first_name|default:'-' }}</td>
+              <td title="{{ student.middle_name }}">{{ student.middle_name|default:'-' }}</td>
+              <td title="{{ student.last_name }}">{{ student.last_name|default:'-' }}</td>
+              <td class="cell-wide" title="{{ student.full_name }}">{{ student.full_name }}</td>
+              <td title="{{ student.semester.name }}">{{ student.semester.name|default:'-' }}</td>
+              <td title="{{ student.program }}">{{ student.program|default:'-' }}</td>
+              <td title="{{ student.discipline }}">{{ student.discipline|default:'-' }}</td>
+              <td class="cell-wide" title="{{ student.research_area }}">{{ student.research_area|default:'-' }}</td>
+              <td class="cell-narrow" title="{{ student.category }}">{{ student.category|default:'-' }}</td>
+              <td>{{ student.dob|date:'d M Y'|default:'-' }}</td>
+              <td class="cell-narrow" title="{{ student.gender }}">{{ student.gender|default:'-' }}</td>
+              <td title="{{ student.contact_no_1 }}">{{ student.contact_no_1|default:'-' }}</td>
+              <td title="{{ student.contact_no_2 }}">{{ student.contact_no_2|default:'-' }}</td>
+              <td class="cell-wide" title="{{ student.email }}">{{ student.email|default:'-' }}</td>
+              <td class="cell-wide" title="{{ student.permanent_address_line_1 }}">{{ student.permanent_address_line_1|default:'-' }}</td>
+              <td class="cell-wide" title="{{ student.address_line_2 }}">{{ student.address_line_2|default:'-' }}</td>
+              <td title="{{ student.city }}">{{ student.city|default:'-' }}</td>
+              <td class="cell-narrow" title="{{ student.pincode }}">{{ student.pincode|default:'-' }}</td>
+              <td title="{{ student.state }}">{{ student.state|default:'-' }}</td>
+              <td class="cell-wide" title="{{ student.iitgn_email_id }}">{{ student.iitgn_email_id|default:'-' }}</td>
+              <td class="cell-action">
+                {% if student.has_offer %}
+                  <span class="offer-status offer-status--active">Offered</span>
+                {% else %}
+                  <form method="post" action="{% url 'student-add-to-offers' student.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                    <button type="submit" class="primary-action primary-action--small">Add to offers</button>
+                  </form>
+                {% endif %}
+              </td>
+              <td class="cell-action">
+                <div class="row-actions">
+                  <form method="post" action="{% url 'student-delete' student.id %}" onsubmit="return confirm('Delete {{ student.full_name }} ({{ student.application_no }})? This also removes their offer, if any.');">
+                    {% csrf_token %}
+                    <button type="submit" class="secondary-action secondary-action--small secondary-action--danger">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="24" class="empty-state">No applicants found. Adjust the filters or import an applicants file.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

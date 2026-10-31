@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-header panel-header--stacked">
+      <div>
+        <p class="section-kicker">Faculty</p>
+        <h2>Faculty Account</h2>
+      </div>
+    </div>
+
+    {% if saved %}
+      <div class="alert alert--success">Faculty account saved.</div>
+    {% endif %}
+
+    {% if account %}
+      <p>This is the only login, besides the superuser, that can open the Faculty Live Sheet. Only superusers can manage it here. Passwords are never displayed or stored in readable form.</p>
+      <div class="credentials">
+        <p><span>Username</span> <code>{{ account.user.username }}</code></p>
+      </div>
+      <h3 class="branch-heading">Change username or reset password</h3>
+    {% else %}
+      <p>No faculty account exists yet. Create it below; it will be the only login, besides the superuser, that can open the Faculty Live Sheet.</p>
+    {% endif %}
+
+    <form method="post" class="semester-form">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <label for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="field-error">{{ form.username.errors|join:' ' }}</div>{% endif %}
+      </div>
+
+      <div class="form-row">
+        <label for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {% if account %}<small>Leave blank to keep the current password.</small>{% endif %}
+        {% if form.password.errors %}<div class="field-error">{{ form.password.errors|join:' ' }}</div>{% endif %}
+      </div>
+
+      <div class="form-actions">
+        <button type="submit">{% if account %}Save changes{% else %}Create faculty account{% endif %}</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}

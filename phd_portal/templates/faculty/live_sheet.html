@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel live-sheet-panel">
+    <div class="live-sheet-header">
+  <div>
+    <p class="section-kicker">Faculty</p>
+    <h2>Faculty Live Sheet</h2>
+  </div>
+
+  <form method="get" class="live-sheet-filters" id="live-sheet-filters">
+    <input type="hidden" name="filtered" value="1">
+    {% for field in filter_fields %}
+      <div class="filter-field">
+        <label>{{ field.label }}</label>
+        <details class="multi-select" data-name="{{ field.name }}">
+          <summary>
+            <span class="multi-select-summary">
+              {% if field.selected_count == field.total_count and field.total_count %}{{ field.all_label }}
+              {% elif field.selected_count == 0 %}None selected
+              {% elif field.selected_count == 1 %}{% for o in field.options %}{% if o.checked %}{{ o.label }}{% endif %}{% endfor %}
+              {% else %}{{ field.selected_count }} selected{% endif %}
+            </span>
+          </summary>
+          <div class="multi-select-menu">
+            <div class="multi-select-actions">
+              <button type="button" data-action="all">Select all</button>
+              <button type="button" data-action="none">Clear</button>
+            </div>
+            {% for o in field.options %}
+              <label class="multi-select-option">
+                <input type="checkbox" name="{{ field.name }}" value="{{ o.value }}" {% if o.checked %}checked{% endif %}>
+                <span>{{ o.label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+    {% endfor %}
+    <div class="filter-field filter-actions">
+      <label>&nbsp;</label>
+      <button type="submit" class="filter-apply">Apply filters</button>
+    </div>
+  </form>
+</div>
+
+    {% if groups %}
+      <div class="live-sheet-table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Sr. No.</th>
+              <th>Application No</th>
+              <th>Status of Fees Payment</th>
+              <th>Program</th>
+              <th>Discipline</th>
+              <th>Name of Candidate</th>
+              <th>Category</th>
+              <th>Withdrawal Status</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          {% for group in groups %}
+            <tbody>
+              {% for offer in group.offers %}
+                <tr>
+                  <td>{{ offer.live_sheet_sr_no }}</td>
+                  <td>{{ offer.student.application_no|default:"—" }}</td>
+                  <td>{% if offer.fees_paid %}Yes{% else %}No{% endif %}</td>
+                  <td>{{ offer.student.program|default:"—" }}</td>
+                  <td>{{ offer.student.discipline|default:"—" }}</td>
+                  <td>{{ offer.student.full_name }}</td>
+                  <td>{{ offer.student.category|default:"—" }}</td>
+                  <td>{{ offer.withdrawal_status|default:"—" }}</td>
+                  <td>{{ offer.remarks|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          {% endfor %}
+        </table>
+      </div>
+    {% else %}
+      <p>No offers found.</p>
+    {% endif %}
+  </section>
+
+  <script>
+    (function () {
+      var form = document.getElementById('live-sheet-filters');
+      if (!form) return;
+      var menus = form.querySelectorAll('.multi-select');
+
+      menus.forEach(function (menu) {
+        menu.querySelectorAll('[data-action]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var check = btn.getAttribute('data-action') === 'all';
+            menu.querySelectorAll('input[type=checkbox]').forEach(function (box) { box.checked = check; });
+            updateSummary(menu);
+          });
+        });
+        menu.addEventListener('change', function () { updateSummary(menu); });
+        menu.addEventListener('toggle', function () {
+          if (menu.open) menus.forEach(function (o) { if (o !== menu) o.open = false; });
+        });
+      });
+
+      document.addEventListener('click', function (e) {
+        menus.forEach(function (m) { if (!m.contains(e.target)) m.open = false; });
+      });
+
+      // Keep the closed-dropdown label in step with the ticks (filters apply on "Apply filters").
+      function updateSummary(menu) {
+        var boxes = menu.querySelectorAll('input[type=checkbox]');
+        var ticked = Array.prototype.filter.call(boxes, function (b) { return b.checked; });
+        var label = menu.querySelector('.multi-select-summary');
+        if (ticked.length === boxes.length && boxes.length) label.textContent = 'All selected';
+        else if (ticked.length === 0) label.textContent = 'None selected';
+        else if (ticked.length === 1) label.textContent = ticked[0].nextElementSibling.textContent.trim();
+        else label.textContent = ticked.length + ' selected';
+      }
+    })();
+  </script>
+{% endblock %}

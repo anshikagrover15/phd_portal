@@ -1,0 +1,89 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Admissions{% endblock %} &middot; IITGN PhD</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=5" />
+    <script>
+      // Restore the sidebar state before first paint (no flash).
+      try { if (localStorage.getItem('sidebarCollapsed') === '1') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}
+    </script>
+  </head>
+  <body>
+    {% if user.is_authenticated %}
+    {% with page=request.resolver_match.url_name %}
+    <header class="topbar">
+      <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="true">
+        <span></span><span></span><span></span>
+      </button>
+      <a class="brand" href="{% if user.is_superuser %}{% url 'home' %}{% else %}{% url 'live-sheet' %}{% endif %}">
+        <span class="brand-mark">IITGN</span> PhD Admissions
+      </a>
+      {% if user.is_superuser %}
+      <div class="semester-pill" title="Active semester">
+        <span class="semester-pill-label">Semester</span>
+        <strong>{% if active_semester_nav %}{{ active_semester_nav.name }}{% else %}none active{% endif %}</strong>
+        <a href="{% url 'semester-list' %}" class="link-quiet">Manage</a>
+      </div>
+      {% endif %}
+      <form method="post" action="{% url 'logout' %}" class="topbar-right">
+        {% csrf_token %}
+        <button type="submit" class="link-quiet">Log out ({{ user.username }})</button>
+      </form>
+    </header>
+    <div class="shell">
+      <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+        {% if user.is_superuser %}
+        <div class="nav-section">
+          <p class="nav-title">Admissions</p>
+          <a href="{% url 'home' %}" class="nav-link {% if page == 'home' %}active{% endif %}">Dashboard</a>
+          <a href="{% url 'student-list' %}" class="nav-link {% if page == 'student-list' or page == 'student-edit' %}active{% endif %}">All applicants</a>
+        </div>
+        <div class="nav-section">
+          <p class="nav-title">Faculty</p>
+          <a href="{% url 'live-sheet' %}" class="nav-link {% if page == 'live-sheet' %}active{% endif %}">Live Sheet</a>
+          <a href="{% url 'faculty-account' %}" class="nav-link {% if page == 'faculty-account' %}active{% endif %}">Faculty Account</a>
+        </div>
+        <div class="nav-section">
+          <p class="nav-title">Data</p>
+          <a href="{% url 'student-import' %}" class="nav-link {% if page == 'student-import' or page == 'fees-import' or page == 'offer-import' %}active{% endif %}">Import</a>
+        </div>
+        {% elif user.faculty_account %}
+        <div class="nav-section">
+          <p class="nav-title">Faculty</p>
+          <a href="{% url 'live-sheet' %}" class="nav-link active">Live Sheet</a>
+        </div>
+        {% endif %}
+      </aside>
+      <main class="main">
+        <div class="page">
+          {% if messages %}
+            {% for message in messages %}
+              <p class="alert {% if message.tags == 'error' %}alert--error{% else %}alert--success{% endif %}">{{ message }}</p>
+            {% endfor %}
+          {% endif %}
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+    </div>
+    {% endwith %}
+    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/multiselect.js' %}"></script>
+    <script>
+      (function () {
+        var root = document.documentElement, btn = document.getElementById('menu-toggle');
+        function sync() { btn.setAttribute('aria-expanded', root.classList.contains('sidebar-collapsed') ? 'false' : 'true'); }
+        btn.addEventListener('click', function () {
+          root.classList.toggle('sidebar-collapsed');
+          try { localStorage.setItem('sidebarCollapsed', root.classList.contains('sidebar-collapsed') ? '1' : '0'); } catch (e) {}
+          sync();
+        });
+        sync();
+      })();
+    </script>
+    {% else %}
+      <main class="page">{% block anon_content %}{% endblock %}</main>
+    {% endif %}
+  </body>
+</html>

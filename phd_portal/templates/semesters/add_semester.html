@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <div class="panel-header panel-header--stacked">
+      <div>
+        <p class="section-kicker">Setup</p>
+        <h2>Add semester</h2>
+      </div>
+      <a href="{% url 'semester-list' %}" class="secondary-action">Back to semesters</a>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert--error">
+        {% for error in form.non_field_errors %}
+          {{ error }}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" class="semester-form">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <label for="{{ form.name.id_for_label }}">Semester name</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+          <div class="field-error">{{ form.name.errors|join:', ' }}</div>
+        {% endif %}
+      </div>
+
+      <div class="checkbox-row">
+        {{ form.is_active }}
+        <label for="{{ form.is_active.id_for_label }}">Mark as active semester</label>
+      </div>
+      {% if form.is_active.errors %}
+        <div class="field-error">{{ form.is_active.errors|join:', ' }}</div>
+      {% endif %}
+
+      <div class="form-actions">
+        <button type="submit">Save semester</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}
